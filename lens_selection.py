@@ -1,10 +1,10 @@
-#import
+# import
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.optimize import basinhopping
 
-#parameter
+# parameter
 ng = 1.452 #diffractive index of glass
 lam = 852e-9 #wave length[m]
 R = 75e-3 #curvature radius[m]
@@ -19,6 +19,7 @@ d2_range_end = 0.3
 d3_range_start = 0
 d3_range_end = 0.15
 
+z = np.linspace(-4500e-3, 4500e-3, 9001)
 plot_on = False
 
 # beam waist size and position
@@ -28,8 +29,6 @@ ws = np.array([1251,1402,1559,1695,1848,2110,2232,2470,2579,2847])*1e-6 #[m]
 def waist(z, z0, w0):
     z_R = np.pi*1*w0**2/lam #Rayleigh length
     return w0*np.sqrt(1 + ((z-z0)/z_R)**2)
-
-z = np.linspace(-4500e-3, 4500e-3, 9001)
 
 popt, pcov = curve_fit(waist, zs, ws)
 waist_position, Omega0 = popt
@@ -72,14 +71,16 @@ def matrixCal(d,f1,f2):
     R_dash = 1/q_out.real
     return Omega_dash, R_dash
 
+# 目的関数
 def objective(d,f1,f2):
     diameter_error = (matrixCal(d,f1,f2)[0]- Omega_target)**2
     return diameter_error
 
+# 曲率半径に関する制約条件で用いる関数
 def curvature_constraint(d,f1,f2):
     return 1/matrixCal(d,f1,f2)[1]
 
-# d1,d2,d3の範囲, 初期値
+# d1,d2,d3のrange, initial value
 bounds = [(d1_range_start-waist_position, d1_range_end-waist_position), (d2_range_start, d2_range_end), (d3_range_start, d3_range_end)]
 
 initial_guesses = [
