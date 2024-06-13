@@ -9,7 +9,7 @@ ng = 1.452 #diffractive index of glass
 lam = 852e-9 #wave length[m]
 R = 75e-3 #curvature radius[m]
 L = 5e-3 #length of cavity[m]
-f = np.array([50,100,150,200,250,300,400,500])*1e-3 #focus length[m]
+f = np.array([-100,-75,-50,30,40,50,75,100,150,200,250,300,400,500])*1e-3 #focus length[m]
 Omega_target = 0.5e-3 #[m]
 
 d1_range_start = 0
@@ -17,7 +17,7 @@ d1_range_end = 400e-3
 d2_range_start = 0
 d2_range_end = 400e-3
 d3_range_start = 0
-d3_range_end = 150e-3
+d3_range_end = 125e-3
 sum_path = 650e-3 #[m]
 
 z = np.linspace(-4500e-3, 4500e-3, 9001)
@@ -77,15 +77,15 @@ def objective(d,f1,f2):
     diameter_error = (matrixCal(d,f1,f2)[0]- Omega_target)**2
     return diameter_error
 
-# 曲率半径に関する制約条件で用いる関数
+# 曲率半径に関する制約条件
 def curvature_constraint(d,f1,f2):
     return 1/matrixCal(d,f1,f2)[1]
 
-# Optical pathの長さに関する制約条件で用いる関数
+# Optical pathの長さに関する制約条件
 def optical_path_constraint(d):
     return d[0]+d[1]+d[2] - sum_path
 
-# d1,d2,d3のrange, initial value
+# d1,d2,d3のrange, initial values
 bounds = [(d1_range_start-waist_position, d1_range_end-waist_position), (d2_range_start, d2_range_end), (d3_range_start, d3_range_end)]
 
 initial_guesses = [
@@ -116,7 +116,7 @@ for i in f: #f1
                 objective,
                 initial_guess,
                 minimizer_kwargs=minimizer_kwargs,
-                niter = 5 # 反復回数は適宜調整
+                niter = 10 # 反復回数は適宜調整
             )
             
             if result.lowest_optimization_result.success:
@@ -127,6 +127,7 @@ for i in f: #f1
 if final_list:
     closest_radius = min(final_list, key=lambda x: abs(x[0] - Omega_target))
     print(f"final radius: {closest_radius[0]}[m]")
+    print(f"final Rayleigh length: {np.pi*1*closest_radius[0]**2/lam}[m]")
     print(f"final cuevature radius:{closest_radius[1]}[m]")
     print(f"出射ポートからlens1までの距離: {(closest_radius[2]+waist_position) * 1e3} [mm], d2: {closest_radius[3] * 1e3} [mm], d3: {closest_radius[4] * 1e3} [mm]")
     print(f"focus length 1: {closest_radius[5] * 1e3} [mm], focus length 2: {closest_radius[6] * 1e3} [mm]")
