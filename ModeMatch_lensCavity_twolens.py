@@ -2,18 +2,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.optimize import fsolve
-from scipy.optimize import minimize
+from scipy.optimize import basinhopping
 
 #parameter
 ng = 1.452 #diffractive index of glass
 lam = 852e-9 #wave length[m]
 R = 75e-3 #curvature radius[m]
 L = 5e-3 #length of cavity[m]
-f = np.array([30,40,50,75,100,125,150,200,250,300,400,500])*1e-3 #focus length[m]
-tube_length = 0.0508 #[m]
+f = np.array([50,100,150,200,250,300,400,500])*1e-3 #focus length[m]
+
+d1_range_start = 0
+d1_range_end = 0.2
+tube_length = 0.0635 #[m]
 #candidate: 50.8, 63.5, 76.3, 88.9[mm]
 adjuster = 0.033
+d3_range_start = 0
+d3_range_end = 0.2
+
 plot_on = False
 
 #stability condition of FilterCavity
@@ -98,8 +103,13 @@ def curvature_constraint(d,f1,f2,n):
     return 1/matrixCal(d,f1,f2,n)[1]
 
 # d1,d2,d3の範囲, 初期値
-bounds = [(0-waist_position, 0.5-waist_position), (tube_length, tube_length+adjuster), (0, 0.20)]
-initial_guess = [(bounds[0][0]+bounds[0][1])/2, (bounds[1][0]+bounds[1][1])/2, (bounds[2][0]+bounds[2][1])/2]
+bounds = [(d1_range_start-waist_position, d1_range_end-waist_position), (tube_length, tube_length+adjuster), (d3_range_start, d3_range_end)]
+
+initial_guesses = [
+    [bounds[0][0], bounds[1][0], bounds[2][0]],
+    [(bounds[0][0]+bounds[0][1])/2, (bounds[1][0]+bounds[1][1])/2, (bounds[2][0]+bounds[2][1])/2],
+    [bounds[0][1], bounds[1][1], bounds[2][1]]
+]
 
 final_list = []
 for i in f: #f1
@@ -110,11 +120,27 @@ for i in f: #f1
         'fun': curvature_constraint,
         'args': (i,j,ng)
         }
-        result = minimize(objective, initial_guess, args=(i,j,ng), bounds=bounds, constraints=constraints)
-        if result.success:
-            optimized_d1, optimized_d2, optimized_d3 = result.x
-            final_radius, final_curvature = matrixCal([optimized_d1,optimized_d2,optimized_d3], i, j, ng)
-            final_list.append((final_radius, final_curvature, optimized_d1, optimized_d2, optimized_d3, i, j)) #[m]
+        
+    # グローバル最適化を実行
+        for initial_guess in initial_guesses:
+            minimizer_kwargs = {
+                'method': 'SLSQP',
+                'args': (i, j, ng),
+                'bounds': bounds,
+                'constraints': constraints
+            }
+            
+            result = basinhopping(
+                objective,
+                initial_guess,
+                minimizer_kwargs=minimizer_kwargs,
+                niter = 5 # 反復回数は適宜調整
+            )
+            
+            if result.lowest_optimization_result.success:
+                optimized_d1, optimized_d2, optimized_d3 = result.x
+                final_radius, final_curvature = matrixCal([optimized_d1, optimized_d2, optimized_d3], i, j, ng)
+                final_list.append((final_radius, final_curvature, optimized_d1, optimized_d2, optimized_d3, i, j))
             
 if final_list:
     closest_radius = min(final_list, key=lambda x: abs(x[0] - Omega_cav))
