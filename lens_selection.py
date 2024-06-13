@@ -13,11 +13,12 @@ f = np.array([50,100,150,200,250,300,400,500])*1e-3 #focus length[m]
 Omega_target = 0.5e-3 #[m]
 
 d1_range_start = 0
-d1_range_end = 0.2
-d2_range_start = 0.1
-d2_range_end = 0.3
+d1_range_end = 400e-3
+d2_range_start = 0
+d2_range_end = 400e-3
 d3_range_start = 0
-d3_range_end = 0.15
+d3_range_end = 150e-3
+sum_path = 650e-3 #[m]
 
 z = np.linspace(-4500e-3, 4500e-3, 9001)
 plot_on = False
@@ -80,6 +81,10 @@ def objective(d,f1,f2):
 def curvature_constraint(d,f1,f2):
     return 1/matrixCal(d,f1,f2)[1]
 
+# Optical pathの長さに関する制約条件で用いる関数
+def optical_path_constraint(d):
+    return d[0]+d[1]+d[2] - sum_path
+
 # d1,d2,d3のrange, initial value
 bounds = [(d1_range_start-waist_position, d1_range_end-waist_position), (d2_range_start, d2_range_end), (d3_range_start, d3_range_end)]
 
@@ -93,11 +98,10 @@ final_list = []
 for i in f: #f1
     for j in f: #f2
         #制約の定義
-        constraints = {
-        'type': 'eq', #等式制約
-        'fun': curvature_constraint,
-        'args': (i,j)
-        }
+        constraints = (
+        {'type': 'eq', 'fun': curvature_constraint, 'args': (i,j)},
+        {'type': 'eq', 'fun': optical_path_constraint}
+        )
         
     # グローバル最適化を実行
         for initial_guess in initial_guesses:
