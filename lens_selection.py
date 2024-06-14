@@ -10,17 +10,17 @@ lam = 852e-9 #wave length[m]
 R = 75e-3 #curvature radius[m]
 L = 5e-3 #length of cavity[m]
 f = np.array([-100,-75,-50,30,40,50,75,100,150,200,250,300,400,500])*1e-3 #focus length[m]
-Omega_target = 0.5e-3 #[m]
+Omega_target = 0.5e-3 #目標ビーム半径[m]
 
 d1_range_start = 0
 d1_range_end = 400e-3
 d2_range_start = 0
 d2_range_end = 400e-3
-d3_range_start = 0
-d3_range_end = 125e-3
-sum_path = 650e-3 #[m]
+d3_range_start = 100e-3
+d3_range_end = 150e-3
+sum_path = 700e-3 #[m]
 
-z = np.linspace(-4500e-3, 4500e-3, 9001)
+z = np.linspace(-4500e-3, 4500e-3, 9001) #plot range
 plot_on = False
 
 # beam waist size and position
@@ -68,7 +68,9 @@ def matrixCal(d,f1,f2):
 
     q_in = 1j*np.pi*1*Omega0**2/lam
     q_out = (A*q_in+B)/(C*q_in+D)
+    q_out_inverse = 1/q_out
     Omega_dash = np.sqrt(q_out.imag*lam/np.pi*1)
+    #Omega_dash = np.sqrt(- lam/(np.pi*1*q_out_inverse.imag))
     R_dash = 1/q_out.real
     return Omega_dash, R_dash
 
