@@ -25,7 +25,7 @@ plot_on = False
 
 # beam waist size and position
 zs = np.array([10,12,14,16,18,20,22,24,26,28])*25*1e-3 #[m]
-ws = np.array([1251,1402,1559,1695,1848,2110,2232,2470,2579,2847])*1e-6 #[m]
+ws = np.array([1251,1402,1559,1695,1848,2110,2232,2470,2579,2847])/2*1e-6 #[m]
 
 def waist(z, z0, w0):
     z_R = np.pi*1*w0**2/lam #Rayleigh length
